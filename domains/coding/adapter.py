@@ -50,6 +50,7 @@ sys.path.insert(0, str(HERE.parent.parent))
 sys.path.insert(0, str(HERE))
 from rrsi.domain import Domain          # noqa: E402
 from rrsi.evaluate import TaskResult    # noqa: E402
+from rrsi import zai                     # noqa: E402
 import briefs                            # noqa: E402
 import render                            # noqa: E402
 
@@ -178,7 +179,8 @@ class CodingDomain(Domain):
                 cmd += ["-i", f"terminal-bench/{t}"]
         env = {**os.environ, "RRSI_CODING_ROOT": str(root / "domains" / "coding"),
                "RRSI_CODING_VENV": str((HERE / ".venv").resolve()),
-               "MODEL": CFG.get("policy_model", "vertex_ai/gemini-3.5-flash")}
+               "MODEL": zai.policy_model(CFG.get("policy_model", "vertex_ai/gemini-3.5-flash")),
+               **zai.litellm_env()}
         log = runs_dir / "logs" / f"{log_prefix or job}.log"
         log.parent.mkdir(parents=True, exist_ok=True)
         with open(log, "a") as lf:
@@ -259,7 +261,7 @@ class CodingDomain(Domain):
             return False, {"stage": "compile", "detail": (comp.stdout + comp.stderr)[-1500:]}
         code = ("from pathlib import Path\nfrom harbor_terminus2 import AgentHarness\n"
                 "a = AgentHarness(logs_dir=Path('/tmp/rrsi_ctor_check'), "
-                f"model_name='{CFG.get('policy_model', 'vertex_ai/gemini-3.5-flash')}')\n"
+                f"model_name='{zai.policy_model(CFG.get('policy_model', 'vertex_ai/gemini-3.5-flash'))}')\n"
                 "assert AgentHarness.name() == 'rrsi-terminus2'\nprint('CTOR_OK')\n")
         ctor = subprocess.run([PYBIN, "-c", code], cwd=str(cdir), capture_output=True,
                               text=True, env={**os.environ, "PYTHONPATH": str(root / "third_party")})

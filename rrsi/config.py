@@ -79,9 +79,11 @@ class RRSIConfig:
     n_fail_traces: int = 22
     n_success_traces: int = 6
     eval_parallel: int = 1          # candidates evaluated concurrently
-    proposer_model: str = "claude-opus-4-8"
-    analyst_model: str = "claude-opus-4-8"
-    critic_model: str = "claude-opus-4-8"
+    # "" -> the provider's default (rrsi.llm.MODEL: claude-opus-4-8 on Vertex,
+    # glm-5.3 on Z.ai); set explicitly to pin a role to another model.
+    proposer_model: str = ""
+    analyst_model: str = ""
+    critic_model: str = ""
     notes: dict = field(default_factory=dict)
 
     @classmethod

@@ -75,8 +75,26 @@ ANTHROPIC_VERTEX_PROJECTS = [
 ]
 
 
+# Z.ai: GLM through LiteLLM's anthropic provider on Z.ai's Anthropic-compatible
+# endpoint. Same selection rule as rrsi.llm (this module runs in the agent venv,
+# which need not have the rrsi package installed).
+ZAI_API_KEY = os.environ.get("ZAI_API_KEY", "")
+ZAI_BASE_URL = os.environ.get("ZAI_ANTHROPIC_BASE_URL", "https://api.z.ai/api/anthropic")
+USE_ZAI = (os.environ.get("RRSI_LLM_PROVIDER") == "zai"
+           or (not os.environ.get("RRSI_LLM_PROVIDER") and ZAI_API_KEY
+               and not ANTHROPIC_VERTEX_PROJECTS))
+if USE_ZAI:
+    if ORCHESTRATOR_MODEL.startswith("vertex_ai/") or ORCHESTRATOR_MODEL.startswith("claude-"):
+        ORCHESTRATOR_MODEL = os.environ.get("ZAI_POLICY_MODEL", "anthropic/glm-5.3")
+    # The key goes into this (agent) process's env, not into extra_args: the
+    # harness under evolution receives extra_args and could log them.
+    os.environ["ANTHROPIC_API_KEY"] = ZAI_API_KEY
+
+
 def policy_endpoints() -> list[dict]:
     """[{model, extra_args}] -- every entry is the same frozen policy model."""
+    if USE_ZAI:
+        return [{"model": ORCHESTRATOR_MODEL, "extra_args": {"api_base": ZAI_BASE_URL}}]
     model_id = ORCHESTRATOR_MODEL.split("/")[-1]
     return [{"model": f"vertex_ai/{model_id}",
              "extra_args": {"vertex_project": p, "vertex_location": VERTEX_LOCATION}}

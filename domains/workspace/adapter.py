@@ -51,6 +51,7 @@ sys.path.insert(0, str(HERE.parent.parent))
 sys.path.insert(0, str(HERE))
 from rrsi.domain import Domain          # noqa: E402
 from rrsi.evaluate import TaskResult    # noqa: E402
+from rrsi import zai                     # noqa: E402
 import briefs                            # noqa: E402
 import render                            # noqa: E402
 
@@ -143,8 +144,9 @@ class WorkspaceDomain(Domain):
                 "RRSI_LOGS": str(runs_dir / "logs"),
                 "GATEWAY_PORT": str(port), "HARVEY_LAB_ROOT": str(HARVEY_LAB_ROOT),
                 "VENV": AGENT_PY, "MAX_CONCURRENT": str(CFG["max_concurrent"]),
-                "ORCHESTRATOR_MODEL": os.environ.get("ORCHESTRATOR_MODEL",
-                                                     "vertex_ai/claude-opus-4-8")}
+                "ORCHESTRATOR_MODEL": zai.policy_model(os.environ.get(
+                    "ORCHESTRATOR_MODEL", "vertex_ai/claude-opus-4-8")),
+                **zai.litellm_env()}
 
     def _produce(self, root: Path, runs_dir: Path, label: str, ids: list[str]) -> int:
         wdir = root / "domains" / "workspace"
