@@ -78,6 +78,29 @@ export VERTEX_LOCATION=global VERTEXAI_LOCATION=global
 export RRSI_VERTEX_PROJECTS="your-project-id"
 ```
 
+#### Using GLM on Z.ai instead of Vertex AI (this fork)
+
+The search roles and the frozen policy can run on GLM through Z.ai's Anthropic-compatible endpoint. No GCP project is needed:
+
+```bash
+export ZAI_API_KEY="..."            # with no RRSI_VERTEX_PROJECTS set, this alone selects Z.ai
+python3 -m rrsi.llm                 # liveness: prints OK from GLM
+```
+
+| Variable | Default | Effect |
+|---|---|---|
+| `RRSI_LLM_PROVIDER` | auto (`zai` if only `ZAI_API_KEY` is set) | `zai` or `vertex` |
+| `RRSI_SEARCH_MODEL` | `glm-5.3` | proposer / analyst / critic model |
+| `ZAI_POLICY_MODEL` | `anthropic/glm-5.3` | frozen policy (LiteLLM string); replaces any `vertex_ai/*` or `claude-*` policy |
+| `ZAI_ANTHROPIC_BASE_URL` | `https://api.z.ai/api/anthropic` | endpoint |
+
+How it's wired:
+- `rrsi/llm.py` uses `anthropic.Anthropic` against Z.ai.
+- `rrsi/zai.py` gives the coding and workspace runners the GLM policy model. The key and endpoint go **only** into the runner subprocess's environment.
+- `domains/eng/config.py` routes LiteLLM to Z.ai. The key is kept out of `extra_args`, because the evolvable harness receives those.
+
+The Harvey LAB judge and the workspace web-search tool still call Gemini on Vertex. Swapping the judge would change what the benchmark measures.
+
 ### 2. Run an instance
 
 Every instance follows the same shape:
